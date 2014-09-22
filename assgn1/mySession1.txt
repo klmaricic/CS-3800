@@ -1,0 +1,67 @@
+Script started on Wed 17 Sep 2014 10:08:57 PM CDT
+select a menu option
+1- ancestry history
+2- who is online
+3- what process any user is running
+4- exit
+1
+
+THE ANCESTRY TREE FOR CURRENT PROCESS IS....
+26737
+|
+24569
+|
+24568
+|
+24567
+|
+2942
+|
+2941
+|
+2579
+|
+1017
+|
+1
+
+select a menu option
+1- ancestry history
+2- who is online
+3- what process any user is running
+4- exit
+2
+
+ags3md klmhw9 mjc7w6 rthq75 tjvxv7
+
+select a menu option
+1- ancestry history
+2- who is online
+3- what process any user is running
+4- exit
+3
+
+Select a currently online user to view his processes:
+     1	mjc7w6
+     2	rthq75
+     3	klmhw9
+     4	ags3md
+     5	tjvxv7
+1
+
+mjc7w6   26845     1  0 Sep14 ?        00:00:04 /usr/bin/perl /usr/bin/dfshack /mnt/dfs/mjc7w6/Users/mjc7w6 /nethome/users/mjc7w6 -o nonempty,allow_root,dev,suid
+mjc7w6   26894 25293  0 Sep14 ?        00:00:01 sshd: mjc7w6@pts/3  
+mjc7w6   26895 26894  0 Sep14 pts/3    00:00:01 -bash
+mjc7w6   26979     1  0 Sep14 ?        00:00:00 /usr/bin/lsyncd -pidfile /tmp/mjc7w6.lsyncd -direct /usr/local/home/mjc7w6 /nethome/users/mjc7w6/linuxhome
+
+select a menu option
+1- ancestry history
+2- who is online
+3- what process any user is running
+4- exit
+4
+
+klmhw9@rc06xcs213:~/SDRIVE/CS3800/assgn1$ exit
+exit
+
+Script done on Wed 17 Sep 2014 10:09:53 PM CDT
