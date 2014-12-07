@@ -76,6 +76,18 @@ void *handleClient(void *params)
             // print goodbye message
             strcpy(message, "Goodbye!");
             write(*sd, message, sizeof(message));
+			
+			//write to all clients that a user has left the room
+            strcpy(message, username);
+            strcat(message, " has left the room\n");
+            for (i = 0; i < sizeof(clientSDs); i++)
+            {
+                int temp = clientSDs[i];
+                if (temp != *sd)
+                {
+                    write(temp, message, sizeof(message));
+                }
+            }
             
             // put mutex on client array
             pthread_mutex_lock(&client_mutex);
