@@ -32,7 +32,7 @@ void *listenForMessages(void *void_ptr)
 
     int *sd = (int *)void_ptr;
 
-    while (read(sd, buf, sizeof(buf)))
+    while (read(*sd, buf, sizeof(buf)))
     {
         printf("%s\n", buf);
     }
@@ -54,7 +54,7 @@ int main( int argc, char* argv[] )
     char hostname[256];
     char username[256];
 
-    signal(SIGINT, INThandler);
+    // signal(SIGINT, INThandler);
 
     /* get the host */ 
     printf("Enter a hostname: ");
@@ -78,12 +78,12 @@ int main( int argc, char* argv[] )
     if( connect( sd, (struct sockaddr*)&server_addr, 
          sizeof(server_addr) ) == -1 ) 
     { 
-        perror( "client: connect FAILED:" ); 
-        exit( 1 ); 
+        perror( "client: connect FAILED:" );
+        exit( 1 );
     }
 
     printf("Enter a username: ");
-    fgets(username, sizeof(username), stdin);
+    scanf("%s", username);
  
     // send a message containing username to server
     write(sd, username, sizeof(username));
@@ -93,7 +93,7 @@ int main( int argc, char* argv[] )
     pthread_create(&readThread, NULL, listenForMessages, &sd);
 
     // we will use Main thread to accept user input and check for exit conditions and write to the server
-    while( gets(&buf) != EOF) 
+    while ( scanf("%s", buf))
     {
         // check for exit conditions
         if (strcmp(buf, "/exit")==0 || strcmp(buf,"/quit")==0 || strcmp(buf, "/part")==0)
