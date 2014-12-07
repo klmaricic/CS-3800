@@ -20,6 +20,8 @@
 #include <netdb.h>       /* define internet socket */ 
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
+#include <pthread.h>
  
 #define SERVER_PORT 9999     /* define a server port number */ 
  
@@ -34,6 +36,13 @@ void *listenForMessages(void *void_ptr)
     {
         printf("%s\n", buf);
     }
+
+    return NULL;
+}
+
+void INThandler(int sig)
+{
+    printf("ERROR: please use /quit or /exit or /part to quit");
 }
 
 int main( int argc, char* argv[] ) 
@@ -45,46 +54,55 @@ int main( int argc, char* argv[] )
     char hostname[256];
     char username[256];
 
+    signal(SIGINT, INThandler);
+
     /* get the host */ 
-    fgets(hostname, sizeof hostname, stdin);
+    printf("Enter a hostname: ");
+    fgets(hostname, sizeof(hostname), stdin);
 
     if( ( hp = gethostbyname( hostname ) ) == NULL ) 
     { 
-	printf( "%s: %s unknown host\n", argv[0], hostname ); 
-	exit( 1 ); 
+        printf( "%s: %s unknown host\n", argv[0], hostname ); 
+        exit( 1 ); 
     } 
     bcopy( hp->h_addr_list[0], (char*)&server_addr.sin_addr, hp->h_length ); 
  
     /* create a socket */ 
     if( ( sd = socket( AF_INET, SOCK_STREAM, 0 ) ) == -1 ) 
     { 
-	perror( "client: socket failed" ); 
-	exit( 1 ); 
+        perror( "client: socket failed" ); 
+        exit( 1 ); 
     } 
  
     /* connect a socket */ 
     if( connect( sd, (struct sockaddr*)&server_addr, 
-		 sizeof(server_addr) ) == -1 ) 
+         sizeof(server_addr) ) == -1 ) 
     { 
-	perror( "client: connect FAILED:" ); 
-	exit( 1 ); 
+        perror( "client: connect FAILED:" ); 
+        exit( 1 ); 
     }
 
-    fgets(username, sizeof username, stdin);
+    printf("Enter a username: ");
+    fgets(username, sizeof(username), stdin);
  
     // send a message containing username to server
     write(sd, username, sizeof(username));
 
     // create new thread to listen for messages from the server
     pthread_t readThread;
-    pthread_create(&readThread, NULL, listenForMessages, &sd)
+    pthread_create(&readThread, NULL, listenForMessages, &sd);
 
     // we will use Main thread to accept user input and check for exit conditions and write to the server
     while( gets(&buf) != EOF) 
     {
-        // [TODO] check for exit conditions
-        // [TODO] close this thread when done
-        // pthread_join(readThread, NULL);
+        // check for exit conditions
+        if (strcmp(buf, "/exit")==0 || strcmp(buf,"/quit")==0 || strcmp(buf, "/part")==0)
+        {
+            pthread_join(readThread, NULL);
+            close(sd); // close connection
+            return 0; // gracefully exit
+        }
+
         write(sd, buf, sizeof(buf)); 
     }
  
