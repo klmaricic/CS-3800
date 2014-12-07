@@ -58,7 +58,7 @@ int main( int argc, char* argv[] )
 
     /* get the host */ 
     printf("Enter a hostname: ");
-    fgets(hostname, sizeof(hostname), stdin);
+    scanf("%s", hostname);
 
     if( ( hp = gethostbyname( hostname ) ) == NULL ) 
     { 
