@@ -26,7 +26,7 @@
 #define SERVER_PORT 9999     /* define a server port number */ 
  
 // read messages from server and print on terminal
-void *listenForMessages(void *void_ptr)
+void *handleRead(void *void_ptr)
 {
     char buf[512];
 
@@ -36,8 +36,6 @@ void *listenForMessages(void *void_ptr)
     {
         printf("%s\n", buf);
     }
-
-    return NULL;
 }
 
 void INThandler(int sig)
@@ -54,7 +52,7 @@ int main( int argc, char* argv[] )
     char hostname[256];
     char username[256];
 
-    // signal(SIGINT, INThandler);
+    signal(SIGINT, INThandler);
 
     /* get the host */ 
     printf("Enter a hostname: ");
@@ -90,20 +88,21 @@ int main( int argc, char* argv[] )
 
     // create new thread to listen for messages from the server
     pthread_t readThread;
-    pthread_create(&readThread, NULL, listenForMessages, &sd);
+    pthread_create(&readThread, NULL, handleRead, &sd);
 
     // we will use Main thread to accept user input and check for exit conditions and write to the server
-    while ( scanf("%s", buf))
+    // while ( scanf("%s", buf))
+    while (fgets(buf, sizeof(buf), stdin))
     {
         // check for exit conditions
-        if (strcmp(buf, "/exit")==0 || strcmp(buf,"/quit")==0 || strcmp(buf, "/part")==0)
+        if (strcmp(buf, "/exit\n")==0 || strcmp(buf,"/quit\n")==0 || strcmp(buf, "/part\n")==0)
         {
-            pthread_join(readThread, NULL);
+            // pthread_join(readThread, NULL);
             close(sd); // close connection
             return 0; // gracefully exit
         }
 
-        write(sd, buf, sizeof(buf)); 
+        write(sd, buf, sizeof(buf));
     }
  
     close(sd); 
