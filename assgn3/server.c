@@ -138,7 +138,7 @@ void *handleClient(void *params)
 void INThandler(int sig)
 {
     char message[256];
-    strcpy(message, "SERVER IS GOING DOWN IN 10 SECONDS\n");
+    strcpy(message, "\nSERVER IS GOING DOWN IN 10 SECONDS\n");
     printf("%s", message);
 
     int i;
