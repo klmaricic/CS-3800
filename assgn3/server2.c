@@ -31,6 +31,7 @@
 #include <pthread.h>
 #include <string.h>
 #include <signal.h>
+#include <unistd.h>
 
 #define SERVER_PORT 9999        /* define a server port number */
 
@@ -123,6 +124,36 @@ void *handleClient(void *params)
     }
 }
 
+void INThandler(int sig)
+{
+    char message[256];
+    strcpy(message, "SERVER IS GOING DOWN IN 10 SECONDS");
+    printf("%s\n", message);
+
+    int i;
+    for (i = 0; i < 10; i++)
+    {
+        if (clients[i])
+        {
+            write(clients[i]->connfd, message, sizeof(message));
+        }
+    }
+
+    // wait 10 seconds
+    sleep(10);
+
+    // exit gracefully
+    for (i = 0; i < 10; i++)
+    {
+        if (clients[i])
+        {
+            close(clients[i]->connfd);
+        }
+    }
+
+    exit ( 1 );
+}
+
 int main()
 {
     int sd, ns, k, pid;
@@ -130,6 +161,8 @@ int main()
     struct sockaddr_in client_addr = { AF_INET };
     int client_len = sizeof( client_addr );
     char buf[512], *host;
+
+    signal(SIGINT, INThandler);
 
     /* create a stream socket */
     if( ( sd = socket( AF_INET, SOCK_STREAM, 0 ) ) == -1 )
@@ -155,15 +188,12 @@ int main()
            exit( 1 );
         }
 
-        // printf("SERVER is listening for clients to establish a connection\n");
         if( ( ns = accept( sd, (struct sockaddr*)&client_addr,
                            &client_len ) ) == -1 )
         {
             perror( "server: accept failed" );
             exit( 1 );
         }
-
-        // printf("accept() successful.. a client has connected! waiting for a message\n");
 
         // spin new thread
         client_t *client = (client_t *)malloc(sizeof(client_t));
