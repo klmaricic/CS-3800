@@ -53,12 +53,14 @@ void *handleClient(void *params)
     read(client->connfd, username, sizeof(username));
 
     // welcome message
-    char message[256] = "Welcome";
+    char message[256] = "Welcome!";
     write(client->connfd, message, sizeof(message));
 
     // write to all clients that a new user has entered the room
     strcpy(message, username);
     strcat(message, " has entered the room\n");
+
+    printf("%s", message);
 
     int e;
     for (e = 0; e < 10; e++)
@@ -143,6 +145,7 @@ int main()
        exit( 1 );
     }
     
+    printf("Server running...\n");
     while (1)
     {
         /* listen for clients */
@@ -152,7 +155,7 @@ int main()
            exit( 1 );
         }
 
-        printf("SERVER is listening for clients to establish a connection\n");
+        // printf("SERVER is listening for clients to establish a connection\n");
         if( ( ns = accept( sd, (struct sockaddr*)&client_addr,
                            &client_len ) ) == -1 )
         {
@@ -160,7 +163,7 @@ int main()
             exit( 1 );
         }
 
-        printf("accept() successful.. a client has connected! waiting for a message\n");
+        // printf("accept() successful.. a client has connected! waiting for a message\n");
 
         // spin new thread
         client_t *client = (client_t *)malloc(sizeof(client_t));
