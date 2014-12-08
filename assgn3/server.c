@@ -1,5 +1,5 @@
 /************************************************************************/
-/*   PROGRAM NAME: server2.c  (works with client.c)                     */
+/*   PROGRAM NAME: server.c  (works with client.c)                     */
 /*                                                                      */
 /*   Server creates a socket to listen for the connection from Client   */
 /*   When the communication established, Server echoes data from Client */
@@ -17,9 +17,10 @@
 /*   on a server machine. Then run the client program on another        */
 /*   machine.                                                           */
 /*                                                                      */
-/*   LINUX:      gcc -pthread -o server server.c                          */
+/*   LINUX:      gcc -o server2  server2.c -lnsl                         */
 /*                                                                      */
 /************************************************************************/
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,77 +31,88 @@
 #include <pthread.h>
 #include <string.h>
 #include <signal.h>
+#include <unistd.h>
 
 #define SERVER_PORT 9999        /* define a server port number */
 
-int clientSDs[10];
-int keepRunning = 1;
+typedef struct {
+    struct sockaddr_in addr;
+    int connfd;
+} client_t;
 
+client_t *clients[10];
 pthread_mutex_t client_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-void INThandler(int sig)
-{
-    printf("Server shutting down in 10 seconds!");
-	keepRunning = 0;
-}
 
 void *handleClient(void *params)
 {
     char buf[512];
-    int *sd = (int *)params;
+    client_t *client = (client_t *)params;
     char username[256];
 
-    // read in username
-    read(*sd, username, sizeof(username));
+    read(client->connfd, username, sizeof(username));
 
     // welcome message
-    char message[256] = "Welcome";
-    write(*sd, message, sizeof(message));
+    char message[256] = "Welcome!\n";
+    write(client->connfd, message, sizeof(message));
 
     // write to all clients that a new user has entered the room
     strcpy(message, username);
     strcat(message, " has entered the room\n");
-    int i;
-    for (i = 0; i < sizeof(clientSDs); i++)
+
+    printf("%s", message);
+
+    int e;
+    for (e = 0; e < 10; e++)
     {
-        int temp = clientSDs[i];
-        if (temp != *sd)
+        if (clients[e] && clients[e]->connfd != client->connfd)
         {
-            write(temp, message, sizeof(message));
+            write(clients[e]->connfd, message, sizeof(message));
         }
     }
 
-    while (read(sd, buf, sizeof(buf)))
+    while (read(client->connfd, buf, sizeof(buf)))
     {
         // check for special messages
-        if (strcmp(buf, "/exit")==0 || strcmp(buf,"/quit")==0 || strcmp(buf, "/part")==0)
+        if (strcmp(buf, "/exit\n")==0 || strcmp(buf,"/quit\n")==0 || strcmp(buf, "/part\n")==0)
         {
             // print goodbye message
-            strcpy(message, "Goodbye!");
-            write(*sd, message, sizeof(message));
-			
-			//write to all clients that a user has left the room
-            strcpy(message, username);
-            strcat(message, " has left the room\n");
-            for (i = 0; i < sizeof(clientSDs); i++)
-            {
-                int temp = clientSDs[i];
-                if (temp != *sd)
-                {
-                    write(temp, message, sizeof(message));
-                }
-            }
+            strcpy(message, "Goodbye!\n");
+            write(client->connfd, message, sizeof(message));
+            
+             // write to all clients that a new user has left the room
+             strcpy(message, username);
+             strcat(message, " has left the room\n");
+             printf("%s", message);
+             for (e = 0; e < 10; e++)
+             {
+                 if (clients[e] && clients[e]->connfd != client->connfd)
+                 {
+                     write(clients[e]->connfd, message, sizeof(message));
+                 }
+             }
+
             
             // put mutex on client array
             pthread_mutex_lock(&client_mutex);
 
-            // [TODO] remove self from array
-
+            // remove self from array
+            int i;
+            for (i = 0; i < 10; i++)
+            {
+                if (clients[i])
+                {
+                    if (clients[i]->connfd == client->connfd)
+                    {
+                        clients[i] = NULL;
+                        break;
+                    }
+                }
+            }
 
             // release mutex on client array
             pthread_mutex_unlock(&client_mutex);
-	printf("Reached manual quit test");
-            close(*sd);
+
+            close(client->connfd);
 
             return;
         }
@@ -112,16 +124,45 @@ void *handleClient(void *params)
         // print message on server terminal
         printf("%s",message);
 
-        // send message out to all other clients
-        for (i = 0; i < sizeof(clientSDs); i++)
+        int u;
+        for (u = 0; u < 10; u++)
         {
-            int temp = clientSDs[i];
-            if (temp != *sd)
+            if (clients[u] && clients[u]->connfd != client->connfd)
             {
-                write(temp, buf, sizeof(buf));
+                write(clients[u]->connfd, message, sizeof(message));
             }
         }
     }
+}
+
+void INThandler(int sig)
+{
+    char message[256];
+    strcpy(message, "SERVER IS GOING DOWN IN 10 SECONDS\n");
+    printf("%s", message);
+
+    int i;
+    for (i = 0; i < 10; i++)
+    {
+        if (clients[i])
+        {
+            write(clients[i]->connfd, message, sizeof(message));
+        }
+    }
+
+    // wait 10 seconds
+    sleep(10);
+
+    // exit gracefully
+    for (i = 0; i < 10; i++)
+    {
+        if (clients[i])
+        {
+            close(clients[i]->connfd);
+        }
+    }
+
+    exit ( 1 );
 }
 
 int main()
@@ -131,95 +172,59 @@ int main()
     struct sockaddr_in client_addr = { AF_INET };
     int client_len = sizeof( client_addr );
     char buf[512], *host;
-    pthread_t clients[10];
-    // int clientSDs[10];
-	
+
     signal(SIGINT, INThandler);
-	
-	while(keepRunning == 1)
-	{
-		printf("Reached 0");
+
     /* create a stream socket */
     if( ( sd = socket( AF_INET, SOCK_STREAM, 0 ) ) == -1 )
     {
-	printf("Reached 1");
        perror( "server: socket failed" );
        exit( 1 );
     }
-
+    
     /* bind the socket to an internet port */
     if( bind(sd, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1 )
     {
-	printf("Reached 2");
        perror( "server: bind failed" );
        exit( 1 );
     }
-
-    /* listen for clients */
-    if( listen( sd, 1 ) == -1 )
+    
+    printf("Server running...\n");
+    while (1)
     {
-	printf("Reached 3");
-       perror( "server: listen failed" );
-       exit( 1 );
-    }
-
-    printf("SERVER is listening for clients to establish a connection\n");
-	printf("Reached after start message");
-    while ( ( ns = accept(sd, (struct sockaddr*)&client_addr, &client_len )) )
-    {
-        if ( ns == -1)
+        /* listen for clients */
+        if( listen( sd, 1 ) == -1 )
         {
-		printf("Reached 4");
-            perror( "server: accept failed" );
+           perror( "server: listen failed" );
+           exit( 1 );
         }
-printf("Reached in while loop");
-        // connection is good
-        // spin a new thread for this client
+
+        if( ( ns = accept( sd, (struct sockaddr*)&client_addr,
+                           &client_len ) ) == -1 )
+        {
+            perror( "server: accept failed" );
+            exit( 1 );
+        }
+
+        // spin new thread
+        client_t *client = (client_t *)malloc(sizeof(client_t));
+        client->addr = client_addr;
+        client->connfd = ns;
+
         pthread_t newThread;
-        pthread_create(&newThread, NULL, handleClient, &sd);
+        pthread_create(&newThread, NULL, handleClient, (void*)client);
+        
+        int i;
+        for (i = 0; i < 10; i++)
+        {
+            if (!clients[i])
+            {
+                clients[i] = client;
+                break;
+            }
+        }
     }
-
-
-
-    // if ( (pid=fork()) == 0 )
-    // {  /* child code begins */
-
-    //     if( ( ns = accept( sd, (struct sockaddr*)&client_addr,
-    //                    &client_len ) ) == -1 )
-    //     {
-    //         perror( "server: accept failed" );
-    //         exit( 1 );
-    //     }
-
-    //     printf("Child accept() successful.. a client has connected to child ! waiting for a message\n");
-
-    //     /* data transfer on connected socket ns */
-    //     while( (k = read(ns, buf, sizeof(buf))) != 0)
-    //     {    printf("SERVER(Child) RECEIVED: %s\n", buf);
-    //          write(ns, buf, k);
-    //     }
-    //     close(ns);
-    //     close(sd);
-    // }
-    // else 
-    // {   /* Parent code */
-    //     if( ( ns = accept( sd, (struct sockaddr*)&client_addr,
-    //                    &client_len ) ) == -1 )
-    //     {
-    //         perror( "server: accept failed" );
-    //         exit( 1 );
-    //     }
-
-    //     printf("Parent accept() successful.. a client has connected to Parent! waiting for a message\n");
-
-    //     // spin a new thread for this client
-    //     pthread_t newThread;
-    //     pthread_create(&newThread, NULL, handleClient, &sd);
-    // }
-    }
-	printf("Reached 5");
-    close(ns);
-    unlink(server_addr.sin_addr);
 
     return(0);
 }
+

@@ -25,6 +25,17 @@
  
 #define SERVER_PORT 9999     /* define a server port number */ 
  
+void *handleShutdown(void *void_ptr)
+{
+    int *sd = (int *)void_ptr;
+
+    sleep(9);
+
+    printf("Goodbye!\n");
+    close(*sd);
+    exit ( 1 );
+}
+
 // read messages from server and print on terminal
 void *handleRead(void *void_ptr)
 {
@@ -34,23 +45,24 @@ void *handleRead(void *void_ptr)
 
     while (read(*sd, buf, sizeof(buf)))
     {
-        if (strcmp(buf, "SERVER IS GOING DOWN IN 10 SECONDS")==0)
+        if (strcmp(buf, "SERVER IS GOING DOWN IN 10 SECONDS\n")==0)
         {
             printf("SERVER IS GOING DOWN IN 10 SECONDS\n");
-            printf("shutting down\n");
-            close(*sd);
-            exit ( 1 );
+
+            // spin new thread and watch the countdown
+            pthread_t shutdownThread;
+            pthread_create(&shutdownThread, NULL, handleShutdown, &*sd);
         }
         else
         {
-            printf("%s\n", buf);
+            printf("%s", buf);
         }
     }
 }
 
 void INThandler(int sig)
 {
-    printf("ERROR: please use /quit or /exit or /part to quit");
+    printf("ERROR: please use /quit or /exit or /part to quit\n");
 }
 
 int main( int argc, char* argv[] ) 
@@ -101,14 +113,13 @@ int main( int argc, char* argv[] )
     pthread_create(&readThread, NULL, handleRead, &sd);
 
     // we will use Main thread to accept user input and check for exit conditions and write to the server
-    // while ( scanf("%s", buf))
     while (fgets(buf, sizeof(buf)-1, stdin))
     {
         // check for exit conditions
         if (strcmp(buf, "/exit\n")==0 || strcmp(buf,"/quit\n")==0 || strcmp(buf, "/part\n")==0)
         {
             write(sd, buf, sizeof(buf));
-            // pthread_join(readThread, NULL);
+            printf("Goodbye!\n");
             close(sd); // close connection
             return 0; // gracefully exit
         }
