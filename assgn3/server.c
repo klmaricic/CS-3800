@@ -17,7 +17,7 @@
 /*   on a server machine. Then run the client program on another        */
 /*   machine.                                                           */
 /*                                                                      */
-/*   LINUX:      gcc -o server  server.c -lnsl                          */
+/*   LINUX:      gcc -pthread -o server server.c                          */
 /*                                                                      */
 /************************************************************************/
 
@@ -34,12 +34,14 @@
 #define SERVER_PORT 9999        /* define a server port number */
 
 int clientSDs[10];
+int keepRunning = 1;
 
 pthread_mutex_t client_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void INThandler(int sig)
 {
     printf("Server shutting down in 10 seconds!");
+	keepRunning = 0;
 }
 
 void *handleClient(void *params)
@@ -97,7 +99,7 @@ void *handleClient(void *params)
 
             // release mutex on client array
             pthread_mutex_unlock(&client_mutex);
-
+	printf("Reached manual quit test");
             close(*sd);
 
             return;
@@ -131,12 +133,16 @@ int main()
     char buf[512], *host;
     pthread_t clients[10];
     // int clientSDs[10];
-
+	
     signal(SIGINT, INThandler);
-
+	
+	while(keepRunning == 1)
+	{
+		printf("Reached 0");
     /* create a stream socket */
     if( ( sd = socket( AF_INET, SOCK_STREAM, 0 ) ) == -1 )
     {
+	printf("Reached 1");
        perror( "server: socket failed" );
        exit( 1 );
     }
@@ -144,6 +150,7 @@ int main()
     /* bind the socket to an internet port */
     if( bind(sd, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1 )
     {
+	printf("Reached 2");
        perror( "server: bind failed" );
        exit( 1 );
     }
@@ -151,19 +158,21 @@ int main()
     /* listen for clients */
     if( listen( sd, 1 ) == -1 )
     {
+	printf("Reached 3");
        perror( "server: listen failed" );
        exit( 1 );
     }
 
     printf("SERVER is listening for clients to establish a connection\n");
-
+	printf("Reached after start message");
     while ( ( ns = accept(sd, (struct sockaddr*)&client_addr, &client_len )) )
     {
         if ( ns == -1)
         {
+		printf("Reached 4");
             perror( "server: accept failed" );
         }
-
+printf("Reached in while loop");
         // connection is good
         // spin a new thread for this client
         pthread_t newThread;
@@ -207,7 +216,8 @@ int main()
     //     pthread_t newThread;
     //     pthread_create(&newThread, NULL, handleClient, &sd);
     // }
-
+    }
+	printf("Reached 5");
     close(ns);
     unlink(server_addr.sin_addr);
 
