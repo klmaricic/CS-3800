@@ -45,7 +45,7 @@ void *handleRead(void *void_ptr)
 
     while (read(*sd, buf, sizeof(buf)))
     {
-        if (strcmp(buf, "SERVER IS GOING DOWN IN 10 SECONDS\n")==0)
+        if (strcmp(buf, "\nSERVER IS GOING DOWN IN 10 SECONDS\n")==0)
         {
             printf("SERVER IS GOING DOWN IN 10 SECONDS\n");
 
