@@ -101,8 +101,10 @@ int main( int argc, char* argv[] )
             close(sd); // close connection
             return 0; // gracefully exit
         }
-
-        write(sd, buf, sizeof(buf));
+        if (strcmp(buf, "\n")!=0)
+        {
+            write(sd, buf, sizeof(buf));
+        }
     }
  
     close(sd); 
