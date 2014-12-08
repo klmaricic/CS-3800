@@ -74,11 +74,24 @@ void *handleClient(void *params)
     while (read(client->connfd, buf, sizeof(buf)))
     {
         // check for special messages
-        if (strcmp(buf, "/exit")==0 || strcmp(buf,"/quit")==0 || strcmp(buf, "/part")==0)
+        if (strcmp(buf, "/exit\n")==0 || strcmp(buf,"/quit\n")==0 || strcmp(buf, "/part\n")==0)
         {
             // print goodbye message
             strcpy(message, "Goodbye!");
             write(client->connfd, message, sizeof(message));
+            
+             // write to all clients that a new user has left the room
+             strcpy(message, username);
+             strcat(message, " has left the room\n");
+             printf("%s", message);
+             for (e = 0; e < 10; e++)
+             {
+                 if (clients[e] && clients[e]->connfd != client->connfd)
+                 {
+                     write(clients[e]->connfd, message, sizeof(message));
+                 }
+             }
+
             
             // put mutex on client array
             pthread_mutex_lock(&client_mutex);

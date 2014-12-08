@@ -97,6 +97,7 @@ int main( int argc, char* argv[] )
         // check for exit conditions
         if (strcmp(buf, "/exit\n")==0 || strcmp(buf,"/quit\n")==0 || strcmp(buf, "/part\n")==0)
         {
+            write(sd, buf, sizeof(buf));
             // pthread_join(readThread, NULL);
             close(sd); // close connection
             return 0; // gracefully exit
