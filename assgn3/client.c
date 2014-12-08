@@ -62,7 +62,7 @@ void *handleRead(void *void_ptr)
 
 void INThandler(int sig)
 {
-    printf("ERROR: please use /quit or /exit or /part to quit\n");
+    printf("\nERROR: please use /quit or /exit or /part to quit\n");
 }
 
 int main( int argc, char* argv[] ) 
