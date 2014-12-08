@@ -17,7 +17,7 @@
 /*   on a server machine. Then run the client program on another        */
 /*   machine.                                                           */
 /*                                                                      */
-/*   LINUX:      gcc -o server2  server2.c -lnsl                         */
+/*   LINUX:      gcc -pthread -o server server.c                        */
 /*                                                                      */
 /************************************************************************/
 
@@ -62,7 +62,7 @@ void *handleClient(void *params)
     printf("%s", message);
 
     int e;
-    for (e = 0; e < 10; e++)
+    for (e = 0; e <= 10; e++)
     {
         if (clients[e] && clients[e]->connfd != client->connfd)
         {
@@ -83,7 +83,7 @@ void *handleClient(void *params)
              strcpy(message, username);
              strcat(message, " has left the room\n");
              printf("%s", message);
-             for (e = 0; e < 10; e++)
+             for (e = 0; e <= 10; e++)
              {
                  if (clients[e] && clients[e]->connfd != client->connfd)
                  {
@@ -97,7 +97,7 @@ void *handleClient(void *params)
 
             // remove self from array
             int i;
-            for (i = 0; i < 10; i++)
+            for (i = 0; i <= 10; i++)
             {
                 if (clients[i])
                 {
@@ -125,7 +125,7 @@ void *handleClient(void *params)
         printf("%s",message);
 
         int u;
-        for (u = 0; u < 10; u++)
+        for (u = 0; u <= 10; u++)
         {
             if (clients[u] && clients[u]->connfd != client->connfd)
             {
@@ -142,7 +142,7 @@ void INThandler(int sig)
     printf("%s", message);
 
     int i;
-    for (i = 0; i < 10; i++)
+    for (i = 0; i <= 10; i++)
     {
         if (clients[i])
         {
@@ -154,7 +154,7 @@ void INThandler(int sig)
     sleep(10);
 
     // exit gracefully
-    for (i = 0; i < 10; i++)
+    for (i = 0; i <= 10; i++)
     {
         if (clients[i])
         {
@@ -215,7 +215,7 @@ int main()
         pthread_create(&newThread, NULL, handleClient, (void*)client);
         
         int i;
-        for (i = 0; i < 10; i++)
+        for (i = 0; i <= 10; i++)
         {
             if (!clients[i])
             {
