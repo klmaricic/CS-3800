@@ -92,7 +92,7 @@ int main( int argc, char* argv[] )
 
     // we will use Main thread to accept user input and check for exit conditions and write to the server
     // while ( scanf("%s", buf))
-    while (fgets(buf, sizeof(buf), stdin))
+    while (fgets(buf, sizeof(buf)-1, stdin))
     {
         // check for exit conditions
         if (strcmp(buf, "/exit\n")==0 || strcmp(buf,"/quit\n")==0 || strcmp(buf, "/part\n")==0)
